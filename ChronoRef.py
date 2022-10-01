@@ -16,215 +16,204 @@ root.title('ChronoRef')
 bg_color="#151818"
 fg_color="#839699"
 accent_color="#094E58"
-myFont = font.Font(size=11, family='Arial')
-myFont2 = font.Font(size=16, family='Helvetica')
+my_font = font.Font(size=11, family='Arial')
+my_font2 = font.Font(size=16, family='Helvetica')
 root['bg']=bg_color
 
 #Determines whether or not the next image is random is in sequential order
-isRandom=False
+is_random=False
 #The resize length of the image. If the image is landscape, this effects the width, otherwise the height is affected.
-sizemod=900
+size_mod=900
 #The starting time of the timer, 30 seconds.
-t=30000
+timer_count=30000
 #The index variable for the image list.
-n = 0
+image_index = 0
 #The variable for the time that's displayed on the countdown timer.
-tc=t
+timer_display=timer_count
 
 #Asks for directory on application startup
 root.directory = filedialog.askdirectory()
 dir_path=root.directory
 
 #Creates a list of images in the selected directory
-my_images = list(pathlib.Path(dir_path).glob('*.jpg'))
+image_list = list(pathlib.Path(dir_path).glob('*.jpg'))
 file_count=len(os.listdir(dir_path))
 
 #An image file from the selected directory.
-my_img = Image.open(my_images[n])
+image_file = Image.open(image_list[image_index])
 
 #Change Directory
-def CD():
+def choose_directory():
 	global dir_path
-	global my_images
+	global image_list
 	global file_count
-	global my_img
-	global n
-	global my_text_label
+	global image_file
+	global image_index
+	global directory_label
+	global image_frame
 	#Selects first image in directory
-	n=0
+	image_index=0
 	root.directory = filedialog.askdirectory()
 	dir_path=root.directory
-	my_images = list(pathlib.Path(dir_path).glob('*.jpg'))
+	image_list = list(pathlib.Path(dir_path).glob('*.jpg'))
 	file_count=len(os.listdir(dir_path))
-	my_img = Image.open(my_images[n])
+	image_file = Image.open(image_list[image_index])
 	
-	my_label.grid_forget()
-	my_text_label.grid_forget()
-	updateTime()
+	display_reset()
+	update_time()
+
+def display_reset():
+	global image_frame
+	global directory_label
+	global timer_display
+	global timer_count
+
+	if timer_display>0: #manual
+		image_frame.destroy()
+		directory_label.destroy()
+	else: #timer
+		image_frame.grid_forget()
+		directory_label.grid_forget()
+
+	timer_display=timer_count
 
 #Update countdown time length
-def updateTime():
-	global tc
-	global t
-	global my_label
-	global my_text_label
-	global my_img
-	global n
-	global h
-	global w 
-	global ar
-	global rw
-	global rh
-	global tkimage
-	global resized 
-	global resized_pic
-	global my_images
-	global sizemod
-	t=selected_time.get()
-	if tc>0: #manual
-		my_label.destroy()
-	else: #timer
-		my_label.grid_forget()
+def update_time():
+	global timer_display
+	global timer_count
+	
 
-	tc=t
-	imageDisplay()
+	timer_count=selected_time.get()
+
+	display_reset()
+	image_display()
 	
 
 #Update whether the next image is random or sequential
 def updateRandom():
-	global isRandom
+	global is_random
 
-	isRandom=selected_random.get()
+	is_random=selected_random.get()
+	display_reset()
+	update_time()
 
-#Timer function
+#timer function
 def timer():
-	global tc
+	global timer_display
+	global my_timer
 
-	tc-=1000
-	minute = int(math.floor(tc/1000/60))
-	second = int(tc/1000%60)
+	timer_display-=1000
+	minute = int(math.floor(timer_display/1000/60))
+	second = int(timer_display/1000%60)
 	counter_string = str(minute) +":"+ str(second)
 
 	my_timer.config(text=counter_string)
 	my_timer.after(1000, timer)
 
 #Function for loading the next image
-def nextImage():
-	global my_label
-	global my_text_label
-	global my_img
-	global n
-	global h
-	global w 
-	global ar
-	global rw
-	global rh
-	global tkimage
-	global resized 
-	global resized_pic
-	global my_images
-	global tc
-	global t
-	global isRandom
-	global sizemod
+def next_image():
+	global image_frame
+	global directory_label
+	global image_file
+	global image_index
+	global image_list
+	global timer_display
+	global timer_count
+	global is_random
 	
-	#Determines if the timer ran out or the next image was triggered manually by pressing the ">>" button
-	if tc>0: #manual
-		my_label.destroy()
-	else: #timer
-		my_label.grid_forget()
-	tc=t
+	
+	
 	
 	#Determines if image selection is random or sequential
-	if isRandom:
-		n=random.randint(0, len(my_images)-1)
+	if is_random:
+		image_index=random.randint(0, len(image_list)-1)
 	else:	
-		if n<len(my_images)-1:
-			n=n+1
+		if image_index<len(image_list)-1:
+			image_index=image_index+1
 		else:
-			n=0
+			image_index=0
 
-	#Wipe grid element, then reload new ones.
-	my_text_label.grid_forget()
 	
-	imageDisplay()
+	display_reset()
+
+	image_display()
 	
 #Function for displaying the image
-def imageDisplay():
-	global my_label
-	global my_text_label
-	global my_img
-	global n
-	global h
-	global w 
-	global ar
-	global rw
-	global rh
-	global tkimage
+def image_display():
+	global image_frame
+	global directory_label
+	global image_file
+	global image_index
+	global image_height
+	global image_width 
+	global aspect_ratio
+	global resize_width
+	global resize_height
+	global tk_image
 	global resized 
 	global resized_pic
-	global my_images
-	global tc
-	global t
-	global isRandom
-	global sizemod
-	my_img = Image.open(my_images[n])
-	tkimage=ImageTk.PhotoImage(my_img)
+	global image_list
+	global timer_display
+	global timer_count
+	global is_random
+	global size_mod
+	image_file = Image.open(image_list[image_index])
+	tk_image=ImageTk.PhotoImage(image_file)
 	
 	# Get Image size
-	h=tkimage.height()
-	w=tkimage.width()
+	image_height=tk_image.height()
+	image_width=tk_image.width()
 	
 	#Determine size of the image. If image length is less than the resize length, it doesn't resize the image.
-	ar=h/w
-	if ar<1:
+	aspect_ratio=image_height/image_width
+	if aspect_ratio<1:
 
-		if w>sizemod:
-			rw=sizemod
-			rh=int(sizemod*ar)
+		if image_width>size_mod:
+			resize_width=size_mod
+			resize_height=int(size_mod*aspect_ratio)
 
 
 		else:
-			rw=w
-			rh=h
+			resize_width=image_width
+			resize_height=image_height
 	else:
-		if h>sizemod:
-			rh=sizemod
-			rw=int(sizemod/ar)
+		if image_height>size_mod:
+			resize_height=size_mod
+			resize_width=int(size_mod/aspect_ratio)
 		else:
-			rw=w
-			rh=h
-	root.geometry(str(rw+300)+"x"+str(rh+100))
+			resize_width=image_width
+			resize_height=image_height
+	root.geometry(str(resize_width+300)+"x"+str(resize_height+100))
 
-	resized = my_img.resize((rw,rh), Image.ANTIALIAS)
+	resized = image_file.resize((resize_width,resize_height), Image.ANTIALIAS)
 	resized_pic = ImageTk.PhotoImage(resized)
 	
 	#Displays the image
-	my_label = Label(root, image=resized_pic, bg=bg_color, fg=fg_color, font=myFont)
-	my_label.grid(row=2, column=2, rowspan=19)
+	image_frame = Label(root, image=resized_pic, bg=bg_color, fg=fg_color, font=my_font)
+	image_frame.grid(row=2, column=2, rowspan=19)
 	
-	#Selects the next image after a certain time (t) has passed
-	my_label.after(t,nextImage)
+	#Selects the next image after a certain time (timer_count) has passed
+	image_frame.after(timer_count,next_image)
 	
 	#Creates a button that displays the current directory. Clicking it prompts the user to select a new one.
-	my_text_label = Button(text=dir_path, bg=bg_color, fg=fg_color, font=myFont, command=CD)
-	my_text_label.grid(row=0, column=2)
+	directory_label = Button(text=dir_path, bg=bg_color, fg=fg_color, font=my_font, command=choose_directory)
+	directory_label.grid(row=0, column=2)
 
 
-imageDisplay()
+image_display()
 
 
 #Adjust the countdown timer length
 selected_time=IntVar()
 selected_time.set(30000)
-r1 = Radiobutton(root, text='30 Seconds', value=30000, variable=selected_time, command=updateTime, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
-r2 = Radiobutton(root, text='1 Minute', value=60000, variable=selected_time, command=updateTime, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
-r3 = Radiobutton(root, text='5 Minutes', value=300000, variable=selected_time, command=updateTime, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
-r4 = Radiobutton(root, text='10 Minutes', value=600000, variable=selected_time, command=updateTime, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
-r5 = Radiobutton(root, text='15 Minutes', value=900000, variable=selected_time, command=updateTime, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
-r6 = Radiobutton(root, text='30 Minutes', value=1800000, variable=selected_time, command=updateTime, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
-r7 = Radiobutton(root, text='45 Minutes', value=2700000, variable=selected_time, command=updateTime, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
-r8 = Radiobutton(root, text='60 Minutes', value=3600000, variable=selected_time, command=updateTime, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
+r1 = Radiobutton(root, text='30 Seconds', value=30000, variable=selected_time, command=update_time, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
+r2 = Radiobutton(root, text='1 Minute', value=60000, variable=selected_time, command=update_time, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
+r3 = Radiobutton(root, text='5 Minutes', value=300000, variable=selected_time, command=update_time, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
+r4 = Radiobutton(root, text='10 Minutes', value=600000, variable=selected_time, command=update_time, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
+r5 = Radiobutton(root, text='15 Minutes', value=900000, variable=selected_time, command=update_time, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
+r6 = Radiobutton(root, text='30 Minutes', value=1800000, variable=selected_time, command=update_time, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
+r7 = Radiobutton(root, text='45 Minutes', value=2700000, variable=selected_time, command=update_time, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
+r8 = Radiobutton(root, text='60 Minutes', value=3600000, variable=selected_time, command=update_time, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
 
 
 r1.grid(row=3, column=0, sticky="nsew")
@@ -238,26 +227,26 @@ r8.grid(row=10, column=0, sticky="nsew")
 
 #Adjust whether or not the next image is sequential or random
 selected_random=BooleanVar()
-rl_label = Label(text="Randomize", bg=bg_color, fg=fg_color, font=myFont)
+rl_label = Label(text="Randomize", bg=bg_color, fg=fg_color, font=my_font)
 rl_label.grid(row=2, column=3, sticky='w')
-rl1 = Radiobutton(root, text='Yes', value=True, variable=selected_random, command=updateRandom, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
-rl2 = Radiobutton(root, text='No', value=False, variable=selected_random, command=updateRandom, bg=bg_color, fg=fg_color, font=myFont, selectcolor=accent_color, indicatoron=0)
+rl1 = Radiobutton(root, text='Yes', value=True, variable=selected_random, command=updateRandom, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
+rl2 = Radiobutton(root, text='No', value=False, variable=selected_random, command=updateRandom, bg=bg_color, fg=fg_color, font=my_font, selectcolor=accent_color, indicatoron=0)
 
 rl1.grid(row=3, column=3, sticky='nsew')
 rl2.grid(row=4, column=3, sticky='nsew')
 
 #Selects the next image before the timer runs out.
-button_right = Button(root, text=">>", command=nextImage, bg=bg_color, fg=fg_color, font=myFont)
+button_right = Button(root, text=">>", command=next_image, bg=bg_color, fg=fg_color, font=my_font)
 button_right.grid(row=0, column=0, pady=10)
 
 
 #Exit program
-button_exit = Button(root, text="X", command=root.quit, bg=bg_color, fg=fg_color, font=myFont)
+button_exit = Button(root, text="X", command=root.quit, bg=bg_color, fg=fg_color, font=my_font)
 button_exit.grid(row=0, column=3, sticky="e")
 
 
 #Displays the timer
-my_timer = Label(root, text="", bg=bg_color, fg=fg_color, font=myFont2)
+my_timer = Label(root, text="", bg=bg_color, fg=fg_color, font=my_font2)
 my_timer.grid(row=21,column=1, columnspan=2)
 
 #Starts the timer
