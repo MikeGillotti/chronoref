@@ -17,6 +17,8 @@ fg_color = "#839699"
 accent_color = "#094E58"
 my_font = font.Font(size=11, family="Arial")
 my_font2 = font.Font(size=16, family="Helvetica")
+timer_paused=False
+
 root["bg"] = bg_color
 
 # Determines whether or not the next image is random is in sequential order
@@ -87,29 +89,85 @@ def update_time():
 
     display_reset()
     image_display()
+def resume():
+	global timer_display
+	global timer_count
+
+	timer_count=timer_display
 
 
 # Update whether the next image is random or sequential
 def updateRandom():
     global is_random
+    global button_shuffle
 
-    is_random = selected_random.get()
+    if is_random == False:
+    	button_shuffle = Button(media_control, text="\U0001F500", command=shuffle, bg=bg_color, fg=fg_color, font=my_font2, border=0)
+    	button_shuffle.grid(row=0, column=3)
+
+    else:
+    	button_shuffle = Button(media_control, text="\U0001F500", command=shuffle, bg=bg_color, fg=accent_color, font=my_font2, border=0)
+    	button_shuffle.grid(row=0, column=3)
+    	
     display_reset()
     update_time()
+
+
+def shuffle():
+	global is_random
+
+	if is_random == False:
+		is_random = True
+	else:
+		is_random = False
+	updateRandom()
 
 
 # timer function
 def timer():
     global timer_display
     global my_timer
+    global timer_paused
 
-    timer_display -= 1000
+    if timer_paused==False:
+
+   		timer_display -= 1000
+   
+
     minute = int(math.floor(timer_display / 1000 / 60))
     second = int(timer_display / 1000 % 60)
     counter_string = "{:0>2}".format(str(minute)) + ":" + "{:0>2}".format(str(second))
 
     my_timer.config(text=counter_string)
+
     my_timer.after(1000, timer)
+
+
+
+
+
+def prev_image():
+    global image_frame
+    global directory_label
+    global image_file
+    global image_index
+    global image_list
+    global timer_display
+    global timer_count
+    global is_random
+
+    # Determines if image selection is random or sequential
+    
+    if image_index == 0:
+        image_index = len(image_list) - 1
+    else:
+        image_index -= 1
+
+    update_time()
+
+    display_reset()	
+
+    image_display()
 
 
 # Function for loading the next image
@@ -132,9 +190,27 @@ def next_image():
         else:
             image_index = 0
 
-    display_reset()
+    update_time()
+
+    display_reset()	
 
     image_display()
+
+def pause_timer():
+	global timer_paused
+
+	if timer_paused == False:
+		timer_paused = True
+		resume()
+
+	else:
+		timer_paused = False
+
+	display_reset()	
+
+	image_display()	
+
+
 
 
 # Function for displaying the image
@@ -156,6 +232,7 @@ def image_display():
     global timer_count
     global is_random
     global size_mod
+    global timer_paused
     image_file = Image.open(image_list[image_index])
     tk_image = ImageTk.PhotoImage(image_file)
 
@@ -191,7 +268,8 @@ def image_display():
     image_frame.grid(row=2, column=2, rowspan=19)
 
     # Selects the next image after a certain time (timer_count) has passed
-    image_frame.after(timer_count, next_image)
+    if timer_paused==False:
+    	image_frame.after(timer_count, next_image)
 
     # Creates a button that displays the current directory. Clicking it prompts the user to select a new one.
     directory_label = Button(
@@ -315,46 +393,42 @@ r8.grid(row=10, column=0, sticky="nsew")
 
 # Adjust whether or not the next image is sequential or random
 selected_random = BooleanVar()
-rl_label = Label(text="Randomize", bg=bg_color, fg=fg_color, font=my_font)
-rl_label.grid(row=2, column=3, sticky="w")
-rl1 = Radiobutton(
-    root,
-    text="Yes",
-    value=True,
-    variable=selected_random,
-    command=updateRandom,
-    bg=bg_color,
-    fg=fg_color,
-    font=my_font,
-    selectcolor=accent_color,
-    indicatoron=0,
-)
-rl2 = Radiobutton(
-    root,
-    text="No",
-    value=False,
-    variable=selected_random,
-    command=updateRandom,
-    bg=bg_color,
-    fg=fg_color,
-    font=my_font,
-    selectcolor=accent_color,
-    indicatoron=0,
-)
 
-rl1.grid(row=3, column=3, sticky="nsew")
-rl2.grid(row=4, column=3, sticky="nsew")
 
-# Selects the next image before the timer runs out.
+# Media Control Frame
+
+media_control = Frame(root)
+media_control.grid(row=22, column=2)
+
+# Media Control Buttons
+
+
+button_shuffle = Button(
+    media_control, text="\U0001F500", command=shuffle, bg=bg_color, fg=fg_color, font=my_font2, border=0
+
+)
+button_shuffle.grid(row=0, column=3)
+
 button_right = Button(
-    root, text=">>", command=next_image, bg=bg_color, fg=fg_color, font=my_font
+    media_control, text="\u23ED", command=next_image, bg=bg_color, fg=fg_color, font=my_font2, border=0
 )
-button_right.grid(row=0, column=0, pady=10)
+button_right.grid(row=0, column=2)
 
+button_pause = Button(
+    media_control, text="\u23EF", command=pause_timer, bg=bg_color, fg=fg_color, font=my_font2, border=0
+
+)
+button_pause.grid(row=0, column=1)
+
+button_left = Button(
+    media_control, text="\u23EE", command=prev_image, bg=bg_color, fg=fg_color, font=my_font2, border=0
+
+)
+button_left.grid(row=0, column=0)
 
 # Exit program
 button_exit = Button(
-    root, text="X", command=root.quit, bg=bg_color, fg=fg_color, font=my_font
+    root, text="\u2715", command=root.quit, bg=bg_color, fg=fg_color, font=my_font
 )
 button_exit.grid(row=0, column=3, sticky="e")
 
