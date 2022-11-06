@@ -8,6 +8,7 @@ import tkinter.font as font
 from tkinter import filedialog
 from tkinter import *
 from PIL import ImageTk, Image
+from natsort import natsorted
 
 root = Tk()
 root.title("ChronoRef")
@@ -37,7 +38,7 @@ root.directory = filedialog.askdirectory()
 dir_path = root.directory
 
 # Creates a list of images in the selected directory
-image_list = list(pathlib.Path(dir_path).glob("*.jpg"))
+image_list = natsorted(list(pathlib.Path(dir_path).glob("*.jpg")))
 file_count = len(os.listdir(dir_path))
 
 # An image file from the selected directory.
@@ -56,7 +57,7 @@ def choose_directory():
     image_index = 0
     root.directory = filedialog.askdirectory()
     dir_path = root.directory
-    image_list = list(pathlib.Path(dir_path).glob("*.jpg"))
+    image_list = natsorted(list(pathlib.Path(dir_path).glob("*.jpg")))
     file_count = len(os.listdir(dir_path))
     image_file = Image.open(image_list[image_index])
 
