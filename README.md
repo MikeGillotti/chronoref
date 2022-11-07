@@ -1,4 +1,4 @@
-![](https://i.ibb.co/mTRh96D/chronorefbanner.jpg)
+![](https://i.ibb.co/QQJYPrb/chronorefbanner.jpg)
 # ChronoRef
 A simple stand-alone application designed for timed art studies.
 
