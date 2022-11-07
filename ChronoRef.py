@@ -7,6 +7,7 @@ import random
 import tkinter.font as font
 from tkinter import filedialog
 from tkinter import *
+import tkinter.scrolledtext as st
 from PIL import ImageTk, Image
 from natsort import natsorted
 
@@ -39,10 +40,12 @@ dir_path = root.directory
 
 # Creates a list of images in the selected directory
 image_list = natsorted(list(pathlib.Path(dir_path).glob("*.jpg")))
+image_name_list = natsorted(list(pathlib.Path(dir_path).name))
 file_count = len(os.listdir(dir_path))
 
 # An image file from the selected directory.
 image_file = Image.open(image_list[image_index])
+selected_thumb=image_list[image_index].name
 
 # Change Directory
 def choose_directory():
@@ -60,6 +63,8 @@ def choose_directory():
     image_list = natsorted(list(pathlib.Path(dir_path).glob("*.jpg")))
     file_count = len(os.listdir(dir_path))
     image_file = Image.open(image_list[image_index])
+
+    thumb_generate()
 
     display_reset()
     update_time()
@@ -211,6 +216,44 @@ def pause_timer():
 
 	image_display()	
 
+thumb_display = Button()
+def image_preview(file):
+    global thumb_image_file
+    global thumb_image
+    global thumb_display
+    global selected_thumb
+    global thumb_generate
+    global scroll_area
+    selected_thumb=file.name
+
+    thumb_generate()
+
+
+    thumb_display.destroy()
+
+    thumb_image_file = Image.open(file)
+    thumb_image_file.thumbnail((200,200))
+    thumb_image = ImageTk.PhotoImage(thumb_image_file)
+    thumb_display = Button(
+    scroll_area, 
+    image=thumb_image, 
+    command=lambda file=file : image_select(file), 
+    bg=bg_color,
+    fg=fg_color,
+    font=my_font,
+    )
+    thumb_display.grid(row=1, column=0)
+
+def image_select(file):
+    global image_index
+
+    image_index=image_list.index(file)
+
+    update_time()
+
+    display_reset() 
+
+    image_display()
 
 
 
@@ -234,6 +277,8 @@ def image_display():
     global is_random
     global size_mod
     global timer_paused
+    global widthpadding
+    global heightpadding
     image_file = Image.open(image_list[image_index])
     tk_image = ImageTk.PhotoImage(image_file)
 
@@ -252,6 +297,7 @@ def image_display():
         else:
             resize_width = image_width
             resize_height = image_height
+        heightpadding = 150
     else:
         if image_height > size_mod:
             resize_height = size_mod
@@ -259,7 +305,8 @@ def image_display():
         else:
             resize_width = image_width
             resize_height = image_height
-    root.geometry(str(resize_width + 300) + "x" + str(resize_height + 100))
+        heightpadding = 100
+    root.geometry(str(resize_width + 300) + "x" + str(resize_height + heightpadding))
 
     resized = image_file.resize((resize_width, resize_height), Image.ANTIALIAS)
     resized_pic = ImageTk.PhotoImage(resized)
@@ -396,6 +443,68 @@ r8.grid(row=10, column=0, sticky="nsew")
 selected_random = BooleanVar()
 
 
+
+# Image List
+
+
+def thumb_generate():
+    global selected_thumb
+    global image_button
+    global scroll_area
+    global yviewposition
+    global positionpad
+    scroll_area = Frame(root, bg=bg_color)
+    scroll_area.grid(row=1, column=3, rowspan=20)
+
+    image_names= st.ScrolledText(scroll_area, width=16, height=24, bg=bg_color,
+    fg=fg_color,
+    font=my_font,)
+   
+    image_names.pack()
+    image_names.grid(row=0, column=0)
+
+
+
+    for x in image_list:
+        #image_button.destroy()
+        #image_names.insert(INSERT, x.name+'\n')
+
+        if x.name == selected_thumb:
+            image_button=Button(
+            image_names, 
+        
+            text=x.name, 
+            command=lambda x=x: image_preview(x), 
+            bg=accent_color,
+            fg=fg_color,
+            font=my_font,
+            height=2
+            
+            )
+            positionpad=2/(len(image_list))
+            yviewposition = (image_list.index(x)/len(image_list))-positionpad
+
+        else:
+            image_button=Button(
+            image_names, 
+        
+            text=x.name, 
+            command=lambda x=x: image_preview(x), 
+            bg=bg_color,
+            fg=fg_color,
+            font=my_font,
+            height=2
+            )
+        image_names.window_create("end", window=image_button)
+        image_names.insert("end", "\n")
+    image_names.yview_moveto(yviewposition)
+
+    image_names.configure(state='disabled')
+
+thumb_generate()
+
+
+
 # Media Control Frame
 
 media_control = Frame(root)
@@ -442,26 +551,7 @@ my_timer.grid(row=21, column=1, columnspan=2)
 timer()
 
 
-# Allows the window to be draggable
-lastClickX = 0
-lastClickY = 0
 
-
-def SaveLastClickPos(event):
-    global lastClickX, lastClickY
-    lastClickX = event.x
-    lastClickY = event.y
-
-
-def Dragging(event):
-    x, y = event.x - lastClickX + root.winfo_x(), event.y - lastClickY + root.winfo_y()
-    root.geometry("+%s+%s" % (x, y))
-
-
-root.overrideredirect(True)
-root.attributes("-topmost", True)
-root.bind("<Button-1>", SaveLastClickPos)
-root.bind("<B1-Motion>", Dragging)
 
 root.resizable(False, False)
 root.mainloop()
